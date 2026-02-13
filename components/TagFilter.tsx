@@ -5,31 +5,30 @@ import Link from "next/link";
 type Tag = { id: string; name: string; color: string | null };
 
 export function TagFilter({ tags, currentTag }: { tags: Tag[]; currentTag: string | null }) {
-  if (tags.length === 0) return null;
-
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex gap-2 overflow-x-auto">
       <Link
         href="/"
-        className={`rounded-full px-3 py-1.5 text-sm transition ${
+        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-medium whitespace-nowrap transition ${
           !currentTag
-            ? "bg-zinc-700 text-white"
-            : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-zinc-300"
+            ? "bg-[var(--accent-glow)] border border-[var(--accent)] text-[var(--accent)]"
+            : "border border-[var(--border-light)] bg-transparent text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)] hover:bg-[var(--accent-glow)]"
         }`}
       >
+        <span className="w-1.5 h-1.5 rounded-full bg-current" />
         すべて
       </Link>
       {tags.map((tag) => (
         <Link
           key={tag.id}
           href={currentTag === tag.name ? "/" : `/?tag=${encodeURIComponent(tag.name)}`}
-          className={`rounded-full px-3 py-1.5 text-sm transition ${
+          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-medium whitespace-nowrap transition ${
             currentTag === tag.name
-              ? "bg-zinc-700 text-white"
-              : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-zinc-300"
+              ? "bg-[var(--accent-glow)] border border-[var(--accent)] text-[var(--accent)]"
+              : "border border-[var(--border-light)] bg-transparent text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)] hover:bg-[var(--accent-glow)]"
           }`}
-          style={tag.color && currentTag !== tag.name ? { borderColor: tag.color } : undefined}
         >
+          <span className="w-1.5 h-1.5 rounded-full bg-current" />
           #{tag.name}
         </Link>
       ))}

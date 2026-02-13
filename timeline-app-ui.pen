@@ -1,0 +1,1379 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mnemo - タイムライン型学習ノート</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-primary: #0a0c10;
+    --bg-secondary: #10141c;
+    --bg-card: #13181f;
+    --bg-hover: #1a2030;
+    --border: #1e2535;
+    --border-light: #242d40;
+    --accent: #4f9cf9;
+    --accent-glow: rgba(79, 156, 249, 0.15);
+    --accent-2: #a78bfa;
+    --accent-3: #34d399;
+    --accent-warn: #fbbf24;
+    --text-primary: #e8edf5;
+    --text-secondary: #6b7a99;
+    --text-muted: #3d4d68;
+    --tag-bg: rgba(79, 156, 249, 0.08);
+    --tag-border: rgba(79, 156, 249, 0.25);
+    --sidebar-w: 240px;
+    --right-w: 320px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: 'Noto Sans JP', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── LAYOUT ── */
+  .app {
+    display: grid;
+    grid-template-columns: var(--sidebar-w) 1fr var(--right-w);
+    min-height: 100vh;
+    max-width: 1280px;
+    margin: 0 auto;
+  }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    padding: 28px 16px;
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow-y: auto;
+  }
+
+  .logo {
+    font-family: 'Syne', sans-serif;
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    padding: 0 12px 20px;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .logo-icon {
+    width: 32px;
+    height: 32px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 14px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-decoration: none;
+    position: relative;
+  }
+
+  .nav-item:hover { background: var(--bg-hover); color: var(--text-primary); }
+
+  .nav-item.active {
+    background: var(--accent-glow);
+    color: var(--accent);
+    border: 1px solid var(--tag-border);
+  }
+
+  .nav-icon {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    opacity: 0.8;
+  }
+
+  .nav-badge {
+    margin-left: auto;
+    background: var(--accent);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 20px;
+    font-family: 'Syne', sans-serif;
+  }
+
+  .nav-section {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    padding: 16px 14px 6px;
+    font-family: 'Syne', sans-serif;
+  }
+
+  .sidebar-bottom {
+    margin-top: auto;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+  }
+
+  .user-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .user-card:hover { background: var(--bg-hover); }
+
+  .avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #4f9cf9, #a78bfa);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    flex-shrink: 0;
+    font-family: 'Syne', sans-serif;
+  }
+
+  .user-info { min-width: 0; }
+  .user-name { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+  .user-email { font-size: 11px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* ── MAIN TIMELINE ── */
+  .main {
+    border-right: 1px solid var(--border);
+    min-height: 100vh;
+  }
+
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: rgba(10, 12, 16, 0.85);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .topbar-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+  }
+
+  .topbar-actions { display: flex; gap: 8px; }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+    font-family: 'Noto Sans JP', sans-serif;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+    box-shadow: 0 0 20px rgba(79, 156, 249, 0.3);
+  }
+
+  .btn-primary:hover {
+    background: #6aabfb;
+    box-shadow: 0 0 28px rgba(79, 156, 249, 0.45);
+    transform: translateY(-1px);
+  }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--text-secondary);
+    border: 1px solid var(--border-light);
+  }
+
+  .btn-ghost:hover { background: var(--bg-hover); color: var(--text-primary); }
+
+  /* ── COMPOSE BOX ── */
+  .compose-box {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 14px;
+  }
+
+  .compose-area {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .compose-input {
+    width: 100%;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-light);
+    border-radius: 12px;
+    padding: 14px 16px;
+    color: var(--text-primary);
+    font-size: 14px;
+    font-family: 'Noto Sans JP', sans-serif;
+    resize: none;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    line-height: 1.6;
+  }
+
+  .compose-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+  }
+
+  .compose-input::placeholder { color: var(--text-muted); }
+
+  .compose-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 10px;
+    padding: 0 2px;
+  }
+
+  .compose-tools { display: flex; gap: 4px; }
+
+  .tool-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    transition: all 0.2s;
+  }
+
+  .tool-btn:hover { background: var(--bg-hover); color: var(--accent); }
+
+  /* ── FILTERS ── */
+  .filter-bar {
+    padding: 12px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+  }
+
+  .filter-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+    border: 1px solid var(--border-light);
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+  }
+
+  .filter-chip:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-glow); }
+
+  .filter-chip.active {
+    background: var(--accent-glow);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .filter-chip .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+
+  /* ── TIMELINE ── */
+  .timeline { padding: 8px 0; }
+
+  .note-card {
+    padding: 18px 24px;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.2s;
+    cursor: pointer;
+    display: flex;
+    gap: 14px;
+    animation: fadeIn 0.3s ease;
+  }
+
+  .note-card:hover { background: rgba(26, 32, 48, 0.5); }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .note-body { flex: 1; min-width: 0; }
+
+  .note-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .note-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-primary);
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .note-time {
+    font-size: 11px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+  }
+
+  .note-content {
+    font-size: 13.5px;
+    line-height: 1.65;
+    color: var(--text-secondary);
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    margin-bottom: 10px;
+  }
+
+  .note-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-bottom: 10px;
+  }
+
+  .tag {
+    font-size: 11px;
+    padding: 3px 9px;
+    border-radius: 20px;
+    background: var(--tag-bg);
+    border: 1px solid var(--tag-border);
+    color: var(--accent);
+    font-weight: 500;
+  }
+
+  .tag.purple {
+    background: rgba(167, 139, 250, 0.08);
+    border-color: rgba(167, 139, 250, 0.25);
+    color: var(--accent-2);
+  }
+
+  .tag.green {
+    background: rgba(52, 211, 153, 0.08);
+    border-color: rgba(52, 211, 153, 0.25);
+    color: var(--accent-3);
+  }
+
+  /* AI SUMMARY */
+  .ai-summary {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-light);
+    border-left: 2px solid var(--accent);
+    border-radius: 0 8px 8px 0;
+    padding: 10px 14px;
+    margin-bottom: 10px;
+  }
+
+  .ai-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-family: 'Syne', sans-serif;
+    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .ai-summary ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .ai-summary li {
+    font-size: 12px;
+    color: var(--text-secondary);
+    padding-left: 14px;
+    position: relative;
+    line-height: 1.5;
+  }
+
+  .ai-summary li::before {
+    content: '›';
+    position: absolute;
+    left: 0;
+    color: var(--accent);
+    font-weight: 700;
+  }
+
+  /* MERMAID PREVIEW */
+  .diagram-preview {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-light);
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 10px;
+    font-family: monospace;
+    font-size: 11px;
+    color: var(--text-secondary);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .diagram-preview::before {
+    content: 'flowchart';
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 9px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    font-family: 'Syne', sans-serif;
+  }
+
+  .diagram-nodes {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .d-node {
+    background: var(--bg-card);
+    border: 1px solid var(--border-light);
+    border-radius: 6px;
+    padding: 5px 10px;
+    font-size: 11px;
+    color: var(--text-primary);
+  }
+
+  .d-arrow { color: var(--accent); font-size: 14px; }
+
+  /* NOTE ACTIONS */
+  .note-actions {
+    display: flex;
+    gap: 2px;
+    margin-top: 6px;
+  }
+
+  .action-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    color: var(--text-muted);
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    transition: all 0.2s;
+    font-family: 'Noto Sans JP', sans-serif;
+  }
+
+  .action-btn:hover { color: var(--accent); background: var(--accent-glow); }
+
+  .action-btn.copy:hover { color: var(--accent-3); background: rgba(52, 211, 153, 0.08); }
+
+  /* ── RIGHT SIDEBAR ── */
+  .right-sidebar {
+    padding: 20px 20px;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .widget {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+
+  .widget-header {
+    padding: 14px 16px 10px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .widget-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+
+  .widget-body { padding: 12px 16px; }
+
+  /* SEARCH */
+  .search-box {
+    position: relative;
+  }
+
+  .search-input {
+    width: 100%;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-light);
+    border-radius: 10px;
+    padding: 10px 14px 10px 36px;
+    color: var(--text-primary);
+    font-size: 13px;
+    font-family: 'Noto Sans JP', sans-serif;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .search-input::placeholder { color: var(--text-muted); }
+  .search-input:focus { border-color: var(--accent); }
+
+  .search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    font-size: 13px;
+  }
+
+  /* QUIZ WIDGET */
+  .quiz-card {
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .quiz-q {
+    font-size: 13px;
+    color: var(--text-primary);
+    line-height: 1.6;
+    font-weight: 500;
+  }
+
+  .quiz-options {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .quiz-opt {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border-light);
+    font-size: 12px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .quiz-opt:hover { border-color: var(--accent); color: var(--text-primary); background: var(--accent-glow); }
+
+  .quiz-opt.correct {
+    border-color: var(--accent-3);
+    background: rgba(52, 211, 153, 0.08);
+    color: var(--accent-3);
+  }
+
+  .opt-letter {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 700;
+    font-family: 'Syne', sans-serif;
+    flex-shrink: 0;
+  }
+
+  .quiz-opt.correct .opt-letter {
+    background: var(--accent-3);
+    border-color: var(--accent-3);
+    color: #000;
+  }
+
+  /* REVIEW SCHEDULE */
+  .review-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .review-item:last-child { border-bottom: none; }
+
+  .review-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .review-dot.today { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
+  .review-dot.soon { background: var(--accent-warn); }
+  .review-dot.later { background: var(--text-muted); }
+
+  .review-text { flex: 1; min-width: 0; }
+  .review-note-title { font-size: 12px; color: var(--text-primary); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .review-when { font-size: 11px; color: var(--text-muted); }
+
+  .comp-level {
+    display: flex;
+    gap: 2px;
+  }
+
+  .comp-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--border-light);
+  }
+
+  .comp-dot.filled { background: var(--accent-3); }
+
+  /* TAGS CLOUD */
+  .tags-cloud {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 10px 16px 14px;
+  }
+
+  .cloud-tag {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid;
+  }
+
+  /* RELATED NOTES */
+  .related-item {
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .related-item:last-child { border-bottom: none; }
+  .related-item:hover .related-title { color: var(--accent); }
+
+  .related-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 3px;
+    transition: color 0.2s;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .related-snippet {
+    font-size: 11px;
+    color: var(--text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .similarity-bar {
+    height: 2px;
+    background: var(--border-light);
+    border-radius: 2px;
+    margin-top: 5px;
+    overflow: hidden;
+  }
+
+  .similarity-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    border-radius: 2px;
+  }
+
+  /* MODAL */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(4px);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .modal {
+    background: var(--bg-card);
+    border: 1px solid var(--border-light);
+    border-radius: 18px;
+    width: 560px;
+    max-width: 95vw;
+    padding: 24px;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+    animation: modalIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  @keyframes modalIn {
+    from { opacity: 0; transform: scale(0.92) translateY(12px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+  }
+
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 18px;
+  }
+
+  .modal-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+  }
+
+  .close-btn {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    border: none;
+    background: var(--bg-hover);
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+  }
+
+  .close-btn:hover { background: var(--border-light); color: var(--text-primary); }
+
+  .modal-textarea {
+    width: 100%;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-light);
+    border-radius: 10px;
+    padding: 14px 16px;
+    color: var(--text-primary);
+    font-size: 14px;
+    font-family: 'Noto Sans JP', sans-serif;
+    resize: none;
+    outline: none;
+    line-height: 1.7;
+    min-height: 120px;
+    transition: border-color 0.2s;
+  }
+
+  .modal-textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+
+  .modal-options {
+    display: flex;
+    gap: 8px;
+    margin: 12px 0;
+  }
+
+  .opt-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border-light);
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'Noto Sans JP', sans-serif;
+  }
+
+  .opt-toggle.on {
+    border-color: var(--accent);
+    background: var(--accent-glow);
+    color: var(--accent);
+  }
+
+  .modal-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 14px;
+  }
+
+  /* AI PROCESSING */
+  .ai-processing {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-light);
+    border-radius: 10px;
+    padding: 10px 14px;
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .spinner {
+    width: 14px;
+    height: 14px;
+    border: 2px solid var(--border-light);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    flex-shrink: 0;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .processing-text { font-size: 12px; color: var(--text-secondary); }
+  .processing-step { color: var(--accent); font-weight: 600; }
+
+  /* EMPTY STATE */
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-muted);
+    font-size: 13px;
+  }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 4px; }
+
+  /* GLOW ACCENTS */
+  .glow-blue { color: var(--accent); }
+  .glow-purple { color: var(--accent-2); }
+  .glow-green { color: var(--accent-3); }
+  .glow-yellow { color: var(--accent-warn); }
+
+  .tab-bar {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .tab {
+    flex: 1;
+    padding: 14px 0;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    font-family: 'Syne', sans-serif;
+  }
+
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .tab:hover { color: var(--text-primary); }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ── LEFT SIDEBAR ── -->
+  <nav class="sidebar">
+    <div class="logo">
+      <div class="logo-icon">🧠</div>
+      Mnemo
+    </div>
+
+    <a class="nav-item active" href="#">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      タイムライン
+    </a>
+    <a class="nav-item" href="#">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      検索
+    </a>
+    <a class="nav-item" href="#">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      チャット
+      <span class="nav-badge">3</span>
+    </a>
+
+    <div class="nav-section">学習</div>
+    <a class="nav-item" href="#">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      今日の復習
+      <span class="nav-badge">5</span>
+    </a>
+    <a class="nav-item" href="#">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+      クイズ
+    </a>
+    <a class="nav-item" href="#">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      統計
+    </a>
+
+    <div class="nav-section">整理</div>
+    <a class="nav-item" href="#">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+      タグ
+    </a>
+    <a class="nav-item" href="#">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      スレッド
+    </a>
+
+    <div class="sidebar-bottom">
+      <div class="user-card">
+        <div class="avatar">田</div>
+        <div class="user-info">
+          <div class="user-name">田中 一郎</div>
+          <div class="user-email"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="0a7e6b646b616b4a6f726b677a666f24696567">[email&#160;protected]</a></div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ── MAIN TIMELINE ── -->
+  <main class="main">
+    <div class="topbar">
+      <span class="topbar-title">タイムライン</span>
+      <div class="topbar-actions">
+        <button class="btn btn-ghost" onclick="document.getElementById('modal').style.display='flex'">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          新規メモ
+        </button>
+      </div>
+    </div>
+
+    <!-- TABS -->
+    <div class="tab-bar">
+      <div class="tab active">すべて</div>
+      <div class="tab">下書き</div>
+      <div class="tab">スレッド</div>
+    </div>
+
+    <!-- COMPOSE BOX -->
+    <div class="compose-box">
+      <div class="avatar" style="width:38px;height:38px;font-size:14px;flex-shrink:0;margin-top:2px;">田</div>
+      <div class="compose-area">
+        <textarea class="compose-input" rows="2" placeholder="今日学んだことを書いてみよう... Markdown対応"></textarea>
+        <div class="compose-footer">
+          <div class="compose-tools">
+            <button class="tool-btn" title="画像">🖼️</button>
+            <button class="tool-btn" title="URL">🔗</button>
+            <button class="tool-btn" title="音声">🎙️</button>
+            <button class="tool-btn" title="下書き">💾</button>
+          </div>
+          <button class="btn btn-primary" style="padding:7px 18px;font-size:12px;">
+            投稿
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- FILTER BAR -->
+    <div class="filter-bar">
+      <div class="filter-chip active"><span class="dot"></span> すべて</div>
+      <div class="filter-chip"><span class="dot"></span> テキスト</div>
+      <div class="filter-chip"><span class="dot"></span> 図解あり</div>
+      <div class="filter-chip">📅 今週</div>
+      <div class="filter-chip">#TypeScript</div>
+      <div class="filter-chip">#React</div>
+      <div class="filter-chip">#DB設計</div>
+    </div>
+
+    <!-- TIMELINE NOTES -->
+    <div class="timeline">
+
+      <!-- Card 1: with AI summary + diagram -->
+      <div class="note-card">
+        <div class="avatar" style="width:36px;height:36px;font-size:13px;flex-shrink:0;margin-top:2px;">田</div>
+        <div class="note-body">
+          <div class="note-header">
+            <span class="note-title">Next.js App Router の基本構造</span>
+            <span class="note-time">3時間前</span>
+          </div>
+          <div class="note-content">
+            App RouterはReact Server Componentsをベースにした新しいルーティングシステム。
+            page.tsx, layout.tsx, loading.tsx などの特殊ファイルによって構成される。
+            データフェッチはasync/awaitで直接コンポーネント内に書けるようになった。
+          </div>
+          <div class="note-tags">
+            <span class="tag">#Next.js</span>
+            <span class="tag">#TypeScript</span>
+            <span class="tag green">#学習メモ</span>
+          </div>
+          <div class="ai-summary">
+            <div class="ai-label">✦ AI要約</div>
+            <ul>
+              <li>App RouterはRSCベースで、サーバーサイドレンダリングを標準サポート</li>
+              <li>ファイルベースルーティングでpage/layout/loadingの3役割を分離</li>
+              <li>async componentでAPIコール可能、コード量が大幅削減</li>
+            </ul>
+          </div>
+          <div class="diagram-preview">
+            <div class="diagram-nodes">
+              <span class="d-node">app/</span>
+              <span class="d-arrow">→</span>
+              <span class="d-node">layout.tsx</span>
+              <span class="d-arrow">+</span>
+              <span class="d-node">page.tsx</span>
+              <span class="d-arrow">→</span>
+              <span class="d-node">loading.tsx</span>
+            </div>
+          </div>
+          <div class="note-actions">
+            <button class="action-btn">💬 チャットで深掘り</button>
+            <button class="action-btn">🔀 図解を開く</button>
+            <button class="action-btn">🧩 クイズ</button>
+            <button class="action-btn copy">⎘ コピー</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 2: AI Processing -->
+      <div class="note-card">
+        <div class="avatar" style="width:36px;height:36px;font-size:13px;flex-shrink:0;margin-top:2px;">田</div>
+        <div class="note-body">
+          <div class="note-header">
+            <span class="note-title">Supabase Row Level Security (RLS) 設定</span>
+            <span class="note-time">6時間前</span>
+          </div>
+          <div class="note-content">
+            RLSはテーブルレベルでアクセス制御を行うPostgreSQLの機能。
+            Supabaseでは全テーブルに対してRLSを有効化し、ポリシーを設定することで
+            ユーザーが自分のデータのみアクセスできるよう制限できる。
+          </div>
+          <div class="note-tags">
+            <span class="tag">#Supabase</span>
+            <span class="tag purple">#DB設計</span>
+            <span class="tag">#セキュリティ</span>
+          </div>
+          <div class="ai-processing">
+            <div class="spinner"></div>
+            <div class="processing-text">
+              <span class="processing-step">フローチャートを生成中...</span>
+              &nbsp;Claude APIが解析しています
+            </div>
+          </div>
+          <div class="note-actions">
+            <button class="action-btn">💬 チャットで深掘り</button>
+            <button class="action-btn">🧩 クイズ</button>
+            <button class="action-btn copy">⎘ コピー</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 3: simple -->
+      <div class="note-card">
+        <div class="avatar" style="width:36px;height:36px;font-size:13px;flex-shrink:0;margin-top:2px;">田</div>
+        <div class="note-body">
+          <div class="note-header">
+            <span class="note-title">ChromaDBのベクトル検索実装</span>
+            <span class="note-time">昨日</span>
+          </div>
+          <div class="note-content">
+            ChromaDBはPython/TypeScriptからアクセス可能なベクトルデータベース。
+            コレクション単位でデータを管理し、.query()メソッドで類似検索を実行。
+            whereパラメータでメタデータフィルタリングが可能。
+          </div>
+          <div class="note-tags">
+            <span class="tag">#ChromaDB</span>
+            <span class="tag green">#RAG</span>
+            <span class="tag">#AI</span>
+          </div>
+          <div class="ai-summary">
+            <div class="ai-label">✦ AI要約</div>
+            <ul>
+              <li>ChromaDB は軽量なベクトルDBでローカル/クラウド両対応</li>
+              <li>埋め込みモデルはOpenAI text-embedding-3-smallを使用</li>
+              <li>セマンティック検索でコサイン類似度0.8以上を閾値に設定</li>
+            </ul>
+          </div>
+          <div class="note-actions">
+            <button class="action-btn">💬 チャットで深掘り</button>
+            <button class="action-btn">🔀 図解を開く</button>
+            <button class="action-btn">🧩 クイズ</button>
+            <button class="action-btn copy">⎘ コピー</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 4 -->
+      <div class="note-card">
+        <div class="avatar" style="width:36px;height:36px;font-size:13px;flex-shrink:0;margin-top:2px;">田</div>
+        <div class="note-body">
+          <div class="note-header">
+            <span class="note-title">スペースドリピティション SM-2アルゴリズム</span>
+            <span class="note-time">2日前</span>
+          </div>
+          <div class="note-content">
+            SM-2は間隔反復法のアルゴリズム。ease_factor（2.5初期値）と正答率に応じて
+            次回復習日を計算する。繰り返し正解するごとにinterval_daysが指数的に増加する。
+          </div>
+          <div class="note-tags">
+            <span class="tag purple">#アルゴリズム</span>
+            <span class="tag">#復習機能</span>
+          </div>
+          <div class="note-actions">
+            <button class="action-btn">💬 チャットで深掘り</button>
+            <button class="action-btn">🔀 図解を開く</button>
+            <button class="action-btn">🧩 クイズ</button>
+            <button class="action-btn copy">⎘ コピー</button>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /timeline -->
+  </main>
+
+  <!-- ── RIGHT SIDEBAR ── -->
+  <aside class="right-sidebar">
+
+    <!-- Search -->
+    <div class="widget">
+      <div class="widget-body" style="padding-bottom:14px;">
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input type="text" class="search-input" placeholder="意味検索 (例: APIの認証方法)">
+        </div>
+      </div>
+    </div>
+
+    <!-- Today's Quiz -->
+    <div class="widget">
+      <div class="widget-header">
+        <div class="widget-title">
+          <span>🧩</span> 今日のクイズ
+        </div>
+        <span style="font-size:11px;color:var(--text-muted);">1/5問</span>
+      </div>
+      <div class="quiz-card">
+        <div class="quiz-q">Next.jsのApp Routerでサーバーコンポーネントを非同期にするには？</div>
+        <div class="quiz-options">
+          <div class="quiz-opt">
+            <div class="opt-letter">A</div>
+            useServer() フックを使う
+          </div>
+          <div class="quiz-opt correct">
+            <div class="opt-letter">B</div>
+            async function で定義する ✓
+          </div>
+          <div class="quiz-opt">
+            <div class="opt-letter">C</div>
+            'use client' を宣言する
+          </div>
+          <div class="quiz-opt">
+            <div class="opt-letter">D</div>
+            Suspense で囲む
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Review Schedule -->
+    <div class="widget">
+      <div class="widget-header">
+        <div class="widget-title">
+          <span>📅</span> 復習スケジュール
+        </div>
+        <button class="btn btn-ghost" style="padding:4px 10px;font-size:11px;">すべて見る</button>
+      </div>
+      <div class="widget-body">
+        <div class="review-item">
+          <div class="review-dot today"></div>
+          <div class="review-text">
+            <div class="review-note-title">RLSポリシーの設定方法</div>
+            <div class="review-when">今日 — 3回目</div>
+          </div>
+          <div class="comp-level">
+            <div class="comp-dot filled"></div>
+            <div class="comp-dot filled"></div>
+            <div class="comp-dot filled"></div>
+            <div class="comp-dot"></div>
+            <div class="comp-dot"></div>
+          </div>
+        </div>
+        <div class="review-item">
+          <div class="review-dot today"></div>
+          <div class="review-text">
+            <div class="review-note-title">ChromaDB collection設計</div>
+            <div class="review-when">今日 — 初回</div>
+          </div>
+          <div class="comp-level">
+            <div class="comp-dot filled"></div>
+            <div class="comp-dot"></div>
+            <div class="comp-dot"></div>
+            <div class="comp-dot"></div>
+            <div class="comp-dot"></div>
+          </div>
+        </div>
+        <div class="review-item">
+          <div class="review-dot soon"></div>
+          <div class="review-text">
+            <div class="review-note-title">SM-2アルゴリズム</div>
+            <div class="review-when">明日 — 2回目</div>
+          </div>
+          <div class="comp-level">
+            <div class="comp-dot filled"></div>
+            <div class="comp-dot filled"></div>
+            <div class="comp-dot"></div>
+            <div class="comp-dot"></div>
+            <div class="comp-dot"></div>
+          </div>
+        </div>
+        <div class="review-item">
+          <div class="review-dot later"></div>
+          <div class="review-text">
+            <div class="review-note-title">App Routerの構造</div>
+            <div class="review-when">3日後 — 4回目</div>
+          </div>
+          <div class="comp-level">
+            <div class="comp-dot filled"></div>
+            <div class="comp-dot filled"></div>
+            <div class="comp-dot filled"></div>
+            <div class="comp-dot filled"></div>
+            <div class="comp-dot"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tags Cloud -->
+    <div class="widget">
+      <div class="widget-header">
+        <div class="widget-title"><span>🏷️</span> タグ</div>
+      </div>
+      <div class="tags-cloud">
+        <span class="cloud-tag" style="border-color:rgba(79,156,249,0.3);color:#4f9cf9;background:rgba(79,156,249,0.08)">#TypeScript</span>
+        <span class="cloud-tag" style="border-color:rgba(167,139,250,0.3);color:#a78bfa;background:rgba(167,139,250,0.08)">#DB設計</span>
+        <span class="cloud-tag" style="border-color:rgba(52,211,153,0.3);color:#34d399;background:rgba(52,211,153,0.08)">#RAG</span>
+        <span class="cloud-tag" style="border-color:rgba(251,191,36,0.3);color:#fbbf24;background:rgba(251,191,36,0.08)">#アルゴリズム</span>
+        <span class="cloud-tag" style="border-color:rgba(79,156,249,0.3);color:#4f9cf9;background:rgba(79,156,249,0.08)">#Next.js</span>
+        <span class="cloud-tag" style="border-color:rgba(167,139,250,0.3);color:#a78bfa;background:rgba(167,139,250,0.08)">#Supabase</span>
+        <span class="cloud-tag" style="border-color:rgba(52,211,153,0.3);color:#34d399;background:rgba(52,211,153,0.08)">#AI</span>
+        <span class="cloud-tag" style="border-color:rgba(79,156,249,0.3);color:#4f9cf9;background:rgba(79,156,249,0.08)">#セキュリティ</span>
+      </div>
+    </div>
+
+    <!-- Related Notes -->
+    <div class="widget">
+      <div class="widget-header">
+        <div class="widget-title"><span>🔗</span> 関連メモ</div>
+      </div>
+      <div class="widget-body">
+        <div class="related-item">
+          <div class="related-title">PostgreSQL の GIN インデックス</div>
+          <div class="related-snippet">全文検索を高速化するための特殊インデックス...</div>
+          <div class="similarity-bar"><div class="similarity-fill" style="width:92%"></div></div>
+        </div>
+        <div class="related-item">
+          <div class="related-title">JWT認証とRefresh Token</div>
+          <div class="related-snippet">Supabase Authで使われるトークン管理の仕組み...</div>
+          <div class="similarity-bar"><div class="similarity-fill" style="width:76%"></div></div>
+        </div>
+        <div class="related-item">
+          <div class="related-title">Vercel Edge Runtimeの制限</div>
+          <div class="related-snippet">Node.js APIが使えない制約とWorkaroundまとめ...</div>
+          <div class="similarity-bar"><div class="similarity-fill" style="width:61%"></div></div>
+        </div>
+      </div>
+    </div>
+
+  </aside>
+</div>
+
+<!-- ── NEW NOTE MODAL ── -->
+<div id="modal" class="modal-overlay" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">新規メモを作成</span>
+      <button class="close-btn" onclick="document.getElementById('modal').style.display='none'">✕</button>
+    </div>
+    <textarea class="modal-textarea" placeholder="今日学んだことを記録しよう&#10;&#10;Markdown 記法対応。コードブロック、箇条書き、見出しが使えます。"></textarea>
+    <div class="modal-options">
+      <button class="opt-toggle on">✦ AI要約</button>
+      <button class="opt-toggle on">🔀 図解生成</button>
+      <button class="opt-toggle">🧩 クイズ生成</button>
+    </div>
+    <div style="padding: 6px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); margin: 4px 0;">
+      <input type="text" placeholder="# タグを追加 (例: #TypeScript #React)" style="width:100%;background:transparent;border:none;outline:none;color:var(--text-secondary);font-size:13px;padding:6px 0;font-family:'Noto Sans JP',sans-serif;">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="document.getElementById('modal').style.display='none'">下書�

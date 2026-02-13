@@ -13,17 +13,25 @@ type NoteWithTags = {
   tags: { id: string; name: string; color: string | null }[];
 };
 
-export function NoteList({ notes, userId }: { notes: NoteWithTags[]; userId: string }) {
+export function NoteList({
+  notes,
+  userId,
+  emptyMessage = "まだメモがありません。上のフォームから投稿してみましょう。",
+}: {
+  notes: NoteWithTags[];
+  userId: string;
+  emptyMessage?: string;
+}) {
   if (notes.length === 0) {
     return (
-      <div className="rounded-xl border border-zinc-800 bg-zinc-900/30 py-16 text-center text-zinc-500">
-        まだメモがありません。上のフォームから投稿してみましょう。
+      <div className="text-center py-16 px-6 text-[var(--text-muted)] text-[13px]">
+        {emptyMessage}
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
+    <div>
       {notes.map((note) => (
         <NoteCard key={note.id} note={note} userId={userId} />
       ))}
