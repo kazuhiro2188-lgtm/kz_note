@@ -1,9 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { AppShell } from "@/components/AppShell";
-import { AppTopbar } from "@/components/AppTopbar";
 import { BottomNav } from "@/components/BottomNav";
-import { MainContentWrapper } from "@/components/MainContentWrapper";
-import { SidebarProvider } from "@/components/SidebarContext";
 import { AnonymousAuth } from "@/components/AnonymousAuth";
 
 export default async function AppLayout({
@@ -26,17 +23,12 @@ export default async function AppLayout({
 
   return (
     <AnonymousAuth>
-      <SidebarProvider>
-        <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)]">
-          <AppShell user={user} tags={allTags ?? []}>
-            <MainContentWrapper>
-              <AppTopbar />
-              <div className="flex-1 pb-16 xl:pb-0">{children}</div>
-              <BottomNav />
-            </MainContentWrapper>
-          </AppShell>
-        </div>
-      </SidebarProvider>
+      <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)]">
+        <AppShell user={user} tags={allTags ?? []}>
+          <div className="pb-16 lg:pb-0">{children}</div>
+          <BottomNav />
+        </AppShell>
+      </div>
     </AnonymousAuth>
   );
 }

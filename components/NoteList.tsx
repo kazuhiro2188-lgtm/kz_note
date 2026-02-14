@@ -24,8 +24,10 @@ export function NoteList({
 }) {
   if (notes.length === 0) {
     return (
-      <div className="text-center py-16 px-6 text-[var(--text-muted)] text-[13px]">
-        {emptyMessage}
+      <div className="text-center py-20 px-6">
+        <p className="text-[var(--text-muted)] text-[14px] leading-relaxed">
+          {emptyMessage}
+        </p>
       </div>
     );
   }

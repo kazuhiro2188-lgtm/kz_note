@@ -25,22 +25,22 @@ export function Sidebar({ user, tags }: { user: User | null; tags: Tag[] }) {
   ];
 
   return (
-    <aside className="h-full flex flex-col px-3 py-2 xl:py-4 bg-[var(--bg-primary)] overflow-y-auto">
+    <aside className="h-full flex flex-col px-3 py-4 bg-[var(--bg-primary)] overflow-y-auto">
       {/* 意味検索 */}
-      <div className="mb-3">
+      <div className="mb-4">
         <SemanticSearchWidget />
       </div>
 
       {/* タグ */}
-      <div className="bg-[var(--bg-secondary)] rounded-xl overflow-hidden mb-3">
-        <div className="px-3 py-2">
-          <h3 className="text-[15px] font-bold">タグ</h3>
-        </div>
-        <div className="flex flex-wrap gap-1.5 p-3 pt-0">
+      <div className="mb-4">
+        <h3 className="text-[12px] font-medium text-[var(--text-muted)] uppercase tracking-wider px-2 mb-2">
+          タグ
+        </h3>
+        <div className="flex flex-wrap gap-1.5">
           <Link
             href="/"
             onClick={() => setSidebarOpen(false)}
-            className="px-2.5 py-1 rounded-full text-[13px] font-medium bg-[var(--bg-hover)] text-[var(--accent)] hover:bg-[var(--accent-glow)] transition"
+            className="px-2.5 py-1.5 rounded-lg text-[13px] font-medium bg-[var(--accent-glow)] text-[var(--accent)] hover:bg-[var(--accent)] hover:text-white transition"
           >
             #すべて
           </Link>
@@ -49,18 +49,11 @@ export function Sidebar({ user, tags }: { user: User | null; tags: Tag[] }) {
               key={tag.id}
               href={`/?tag=${encodeURIComponent(tag.name)}`}
               onClick={() => setSidebarOpen(false)}
-              className="px-2.5 py-1 rounded-full text-[13px] font-medium transition hover:bg-[var(--bg-hover)]"
+              className="px-2.5 py-1.5 rounded-lg text-[13px] font-medium transition hover:bg-[var(--bg-hover)]"
               style={
                 tag.color
-                  ? {
-                      borderColor: `${tag.color}4d`,
-                      color: tag.color,
-                      background: `${tag.color}14`,
-                    }
-                  : {
-                      background: "var(--bg-hover)",
-                      color: "var(--accent)",
-                    }
+                  ? { color: tag.color, background: `${tag.color}18` }
+                  : { background: "var(--bg-hover)", color: "var(--text-secondary)" }
               }
             >
               #{tag.name}
@@ -69,8 +62,8 @@ export function Sidebar({ user, tags }: { user: User | null; tags: Tag[] }) {
         </div>
       </div>
 
-      {/* ナビゲーション - X風 */}
-      <nav className="flex flex-col gap-0.5 mt-1">
+      {/* ナビゲーション */}
+      <nav className="flex flex-col gap-0.5">
         {navItems.map((item) => {
           const isActive =
             pathname === item.href ||
@@ -80,10 +73,10 @@ export function Sidebar({ user, tags }: { user: User | null; tags: Tag[] }) {
               key={item.href}
               href={item.href}
               onClick={() => setSidebarOpen(false)}
-              className={`flex items-center gap-2.5 px-3 py-2.5 rounded-full text-[15px] font-medium transition ${
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-[14px] font-medium transition ${
                 isActive
-                  ? "font-bold"
-                  : "font-normal text-[var(--text-primary)] hover:bg-[var(--bg-hover)]"
+                  ? "bg-[var(--accent-glow)] text-[var(--accent)]"
+                  : "text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
               }`}
             >
               <NavIcon name={item.icon} active={isActive} />
@@ -94,21 +87,21 @@ export function Sidebar({ user, tags }: { user: User | null; tags: Tag[] }) {
       </nav>
 
       {/* ナレッジマップ */}
-      <div className="mt-3 mb-3">
+      <div className="mt-4 mb-4">
         <KnowledgeMap />
       </div>
 
-      {/* 新規メモボタン - XのPostボタン風 */}
+      {/* メモするボタン */}
       <Link
         href="/"
         onClick={() => setSidebarOpen(false)}
-        className="mt-3 flex items-center justify-center w-[90%] py-2.5 rounded-full bg-[var(--accent)] text-white font-bold text-[15px] hover:bg-[#6aabfb] transition"
+        className="flex items-center justify-center py-2.5 rounded-xl bg-[var(--accent)] text-white text-[14px] font-semibold hover:opacity-90 transition"
       >
         メモする
       </Link>
 
       {/* ユーザー - 下部固定 */}
-      <div className="mt-auto pt-3">
+      <div className="mt-auto pt-4 border-t border-[var(--border)]">
         <div className="flex items-center gap-2.5 p-2.5 rounded-full hover:bg-[var(--bg-hover)] transition cursor-default">
           <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#4f9cf9] to-[#a78bfa] flex items-center justify-center text-xs font-bold shrink-0">
             {user?.email?.[0]?.toUpperCase() ?? "?"}

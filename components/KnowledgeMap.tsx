@@ -41,9 +41,9 @@ export function KnowledgeMap() {
 
   if (loading) {
     return (
-      <div className="bg-[var(--bg-secondary)] rounded-xl p-4">
-        <div className="flex items-center justify-center py-6">
-          <div className="w-5 h-5 border-2 border-[var(--border-light)] border-t-[var(--accent)] rounded-full animate-spin" />
+      <div className="p-4">
+        <div className="flex items-center justify-center py-4">
+          <div className="w-4 h-4 border-2 border-[var(--border-light)] border-t-[var(--accent)] rounded-full animate-spin" />
         </div>
       </div>
     );
@@ -51,9 +51,11 @@ export function KnowledgeMap() {
 
   if (!stats || stats.totalNotes === 0) {
     return (
-      <div className="bg-[var(--bg-secondary)] rounded-xl p-4">
-        <h3 className="text-[15px] font-bold mb-2">ナレッジマップ</h3>
-        <p className="text-[13px] text-[var(--text-muted)]">
+      <div className="p-3">
+        <h3 className="text-[12px] font-medium text-[var(--text-muted)] uppercase tracking-wider mb-2">
+          ナレッジマップ
+        </h3>
+        <p className="text-[12px] text-[var(--text-muted)]">
           ノートを作成してタグを付けると、知識分布が可視化されます。
         </p>
       </div>
@@ -63,13 +65,13 @@ export function KnowledgeMap() {
   const maxCount = Math.max(...stats.tagStats.map((t) => t.note_count), 1);
 
   return (
-    <div className="bg-[var(--bg-secondary)] rounded-xl overflow-hidden">
-      <div className="px-4 py-3 border-b border-[var(--border)]">
-        <h3 className="text-[15px] font-bold">ナレッジマップ</h3>
-      </div>
+    <div className="overflow-hidden">
+      <h3 className="text-[12px] font-medium text-[var(--text-muted)] uppercase tracking-wider mb-2 px-2">
+        ナレッジマップ
+      </h3>
 
       {/* サマリー */}
-      <div className="grid grid-cols-3 gap-2 p-4 pb-2">
+      <div className="grid grid-cols-3 gap-2 p-3 pb-2">
         <div className="text-center">
           <div className="text-[18px] font-bold text-[var(--accent)]">
             {stats.totalNotes}
@@ -92,7 +94,7 @@ export function KnowledgeMap() {
 
       {/* タグ分布バー */}
       {stats.tagStats.length > 0 && (
-        <div className="px-4 pb-4 space-y-2">
+        <div className="px-2 pb-3 space-y-2">
           {stats.tagStats.slice(0, 8).map((tag, i) => {
             const color = tag.tag_color || DEFAULT_COLORS[i % DEFAULT_COLORS.length];
             const widthPercent = Math.max(
@@ -126,7 +128,7 @@ export function KnowledgeMap() {
       )}
 
       {stats.tagStats.length === 0 && (
-        <div className="px-4 pb-4">
+        <div className="px-2 pb-3">
           <p className="text-[13px] text-[var(--text-muted)]">
             タグを付けてノートを整理すると、知識分布がここに表示されます。
           </p>

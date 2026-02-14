@@ -1,11 +1,10 @@
-import Link from "next/link";
-import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
 import { NoteList } from "@/components/NoteList";
 import { NoteComposer } from "@/components/NoteComposer";
 import { TagFilter } from "@/components/TagFilter";
 import { TimelineTabs } from "@/components/TimelineTabs";
 import { TopicFeed } from "@/components/TopicFeed";
+import { KnowledgeMap } from "@/components/KnowledgeMap";
 
 export default async function HomePage({
   searchParams,
@@ -19,7 +18,7 @@ export default async function HomePage({
 
   if (!user) {
     return (
-      <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-card)]/30 py-16 text-center text-[var(--text-muted)]">
+      <div className="py-20 text-center text-[var(--text-muted)]">
         読み込み中...
       </div>
     );
@@ -106,41 +105,55 @@ export default async function HomePage({
   });
 
   return (
-    <div className="flex flex-col min-h-0">
-      {/* ヘッダー - Composeの上位（タブ） */}
-      <header className="border-b border-[var(--border)]">
-        <TimelineTabs currentTab={tab} />
-      </header>
-      {/* Compose - X風 ツイート入力 */}
-      <div className="px-4 py-4 border-b border-[var(--border)]">
-        <Link href="/" className="xl:hidden inline-block p-2 -ml-2 mb-2 rounded-full hover:bg-[var(--bg-hover)] transition">
-          <Image
-            src="/logo-sidebar.png"
-            alt="kz_note"
-            width={28}
-            height={28}
-            className="h-7 w-auto object-contain"
+    <div className="flex gap-0 lg:gap-6 px-4 py-4">
+      {/* 左カラム: メモ入力 + タイムライン */}
+      <div className="flex-1 min-w-0 flex flex-col gap-0">
+        {/* モバイル: トピックフィード */}
+        {tab === "all" && (
+          <div className="lg:hidden bg-[var(--bg-secondary)] rounded-xl overflow-hidden mb-4">
+            <TopicFeed userId={user.id} />
+          </div>
+        )}
+
+        {/* メモ入力 */}
+        <div className="bg-[var(--bg-secondary)] rounded-xl p-4 mb-4">
+          <NoteComposer userId={user.id} tags={allTags ?? []} />
+        </div>
+
+        {/* タブ + タグフィルター */}
+        <div className="flex items-center gap-3 mb-3 flex-wrap">
+          <TimelineTabs currentTab={tab} inline />
+          <div className="flex-1 min-w-0 overflow-x-auto">
+            <TagFilter tags={allTags ?? []} currentTag={filterTag ?? null} />
+          </div>
+        </div>
+
+        {/* タイムライン */}
+        <div className="flex-1">
+          <NoteList
+            notes={notesWithTags}
+            userId={user.id}
+            emptyMessage={
+              tab === "threads"
+                ? "スレッド機能は準備中です。"
+                : "まだメモがありません。上のフォームから投稿してみましょう。"
+            }
           />
-        </Link>
-        <NoteComposer userId={user.id} tags={allTags ?? []} />
+        </div>
       </div>
 
-      {/* Daily AI Topics */}
-      {tab === "all" && <TopicFeed userId={user.id} />}
+      {/* 右カラム: トピック + ナレッジマップ (デスクトップ) */}
+      <aside className="hidden lg:flex flex-col w-[380px] shrink-0 gap-4">
+        {tab === "all" && (
+          <div className="bg-[var(--bg-secondary)] rounded-xl overflow-hidden sticky top-20">
+            <TopicFeed userId={user.id} />
+          </div>
+        )}
 
-      {/* Filter */}
-      <div className="px-4 py-2 border-b border-[var(--border)]">
-        <TagFilter tags={allTags ?? []} currentTag={filterTag ?? null} />
-      </div>
-
-      {/* Timeline */}
-      <div className="flex-1 overflow-y-auto min-h-0">
-        <NoteList
-          notes={notesWithTags}
-          userId={user.id}
-          emptyMessage={tab === "threads" ? "スレッド機能は準備中です。" : undefined}
-        />
-      </div>
+        <div className="bg-[var(--bg-secondary)] rounded-xl p-4">
+          <KnowledgeMap />
+        </div>
+      </aside>
     </div>
   );
 }
