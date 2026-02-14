@@ -2,6 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import { fetchHackerNewsAITopics } from "@/lib/topics/fetch-hackernews";
 import { fetchDevToAITopics } from "@/lib/topics/fetch-devto";
 import { generateEmbedding } from "@/lib/ai/embeddings";
+import { translateToJapanese } from "@/lib/ai/translate";
 
 type TopicData = {
   title: string;
@@ -12,13 +13,33 @@ type TopicData = {
   tags: string[];
 };
 
+/** 主に英語かどうか（日本語翻訳をスキップするか） */
+function isMostlyJapanese(text: string): boolean {
+  const jpChars = (text.match(/[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]/g) || []).length;
+  return jpChars / Math.max(text.length, 1) > 0.3;
+}
+
 async function upsertTopicWithEmbedding(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   supabase: any,
   topic: TopicData,
   source: string
 ) {
-  const textForEmbedding = [topic.title, topic.description]
+  let title = topic.title;
+  let description = topic.description;
+
+  // 英語の場合は日本語に翻訳
+  if (!isMostlyJapanese(topic.title)) {
+    try {
+      const translated = await translateToJapanese(topic.title, topic.description);
+      title = translated.title;
+      description = translated.description;
+    } catch {
+      // 翻訳失敗時は原文のまま
+    }
+  }
+
+  const textForEmbedding = [title, description]
     .filter(Boolean)
     .join(". ");
 
@@ -31,8 +52,8 @@ async function upsertTopicWithEmbedding(
 
   const { error } = await supabase.from("daily_topics").upsert(
     {
-      title: topic.title,
-      description: topic.description,
+      title,
+      description,
       source_url: topic.source_url,
       source,
       source_id: topic.source_id,

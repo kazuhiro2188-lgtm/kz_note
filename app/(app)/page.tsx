@@ -105,7 +105,7 @@ export default async function HomePage({
   });
 
   return (
-    <div className="flex gap-0 lg:gap-6 px-4 py-4">
+    <div className="flex gap-0 lg:gap-8 xl:gap-10 py-4">
       {/* 左カラム: メモ入力 + タイムライン */}
       <div className="flex-1 min-w-0 flex flex-col gap-0">
         {/* モバイル: トピックフィード */}
@@ -142,8 +142,8 @@ export default async function HomePage({
         </div>
       </div>
 
-      {/* 右カラム: トピック + ナレッジマップ (デスクトップ) */}
-      <aside className="hidden lg:flex flex-col w-[380px] shrink-0 gap-4">
+      {/* 右カラム: トピック + ナレッジマップ (デスクトップ) - 大画面で幅を拡大 */}
+      <aside className="hidden lg:flex flex-col w-[380px] xl:w-[420px] 2xl:w-[460px] shrink-0 gap-4">
         {tab === "all" && (
           <div className="bg-[var(--bg-secondary)] rounded-xl overflow-hidden sticky top-20">
             <TopicFeed userId={user.id} />

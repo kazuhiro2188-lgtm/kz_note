@@ -19,8 +19,8 @@ export function AppTopbar({ user, tags }: { user: User | null; tags: Tag[] }) {
 
   return (
     <header className="sticky top-0 z-20 bg-[var(--bg-primary)]/95 backdrop-blur-md border-b border-[var(--border)]">
-      {/* 上段: ロゴ + ナビ + 検索 + ユーザー */}
-      <div className="max-w-[1400px] mx-auto px-4">
+      {/* 上段: ロゴ + ナビ + 検索 + ユーザー - 大画面で幅を有効活用 */}
+      <div className="w-full max-w-[1400px] xl:max-w-[1600px] 2xl:max-w-[1800px] mx-auto px-4">
         <div className="flex items-center gap-4 h-16">
           {/* ロゴ */}
           <Link href="/" className="shrink-0">
@@ -57,7 +57,7 @@ export function AppTopbar({ user, tags }: { user: User | null; tags: Tag[] }) {
           </nav>
 
           {/* 検索 - 中央 */}
-          <div className="flex-1 max-w-md hidden md:block">
+          <div className="flex-1 max-w-md xl:max-w-lg 2xl:max-w-xl hidden md:block">
             <SemanticSearchWidget compact />
           </div>
 
