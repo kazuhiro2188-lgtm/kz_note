@@ -4,7 +4,8 @@ import { generateRagResponse } from "@/lib/ai/rag-chat";
 import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
-  const { message, sessionId } = await request.json();
+  try {
+  const { message, sessionId, noteId } = await request.json();
   if (!message || typeof message !== "string" || !sessionId) {
     return NextResponse.json(
       { error: "message and sessionId required" },
@@ -40,22 +41,51 @@ export async function POST(request: Request) {
     content: message,
   });
 
-  // RAG: セマンティック検索で関連メモを取得
+  // RAG: コンテキストを構築
   let context = "";
+
+  // noteId 指定時: そのメモを優先コンテキストに
+  if (noteId && typeof noteId === "string") {
+    const { data: note } = await supabase
+      .from("notes")
+      .select("title, content")
+      .eq("id", noteId)
+      .eq("user_id", user.id)
+      .is("deleted_at", null)
+      .single();
+
+    if (note && (note.content || note.title)) {
+      const noteContext = note.title
+        ? `【タイトル】${note.title}\n\n【本文】\n${note.content || ""}`
+        : String(note.content || "");
+      context = noteContext.trim();
+    }
+  }
+
+  // セマンティック検索で関連メモを追加（noteId 指定時は補足として）
   if (process.env.OPENAI_API_KEY) {
     const embedding = await generateEmbedding(message);
     if (embedding) {
-      const { data: matches } = await supabase.rpc("match_note_embeddings", {
+      const { data: matches, error: rpcError } = await supabase.rpc("match_note_embeddings", {
         query_embedding: embedding,
         match_user_id: user.id,
         match_threshold: 0.25,
-        match_count: 5,
+        match_count: noteId ? 3 : 5,
       });
 
+      if (rpcError) {
+        console.error("[api/ai/chat] match_note_embeddings error:", rpcError);
+      }
+
       if (matches && matches.length > 0) {
-        context = matches
+        const searchContext = matches
           .map((m: { content: string }) => m.content)
           .join("\n\n---\n\n");
+        if (searchContext) {
+          context = context
+            ? `${context}\n\n---\n\n【その他の関連メモ】\n${searchContext}`
+            : searchContext;
+        }
       }
     }
   }
@@ -85,4 +115,12 @@ export async function POST(request: Request) {
   });
 
   return NextResponse.json({ message: assistantMessage });
+  } catch (err) {
+    console.error("[api/ai/chat] Error:", err);
+    let message = err instanceof Error ? err.message : "Internal server error";
+    if (message.includes("invalid x-api-key") || message.includes("authentication_error")) {
+      message = "AI API の認証に失敗しました。.env.local の ANTHROPIC_API_KEY を確認してください。";
+    }
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 }

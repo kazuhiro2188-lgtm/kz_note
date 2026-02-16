@@ -106,9 +106,13 @@ export function TopicFeed({ userId }: { userId: string }) {
   return (
     <div>
       {/* ヘッダー */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border)]">
-        <div className="flex items-center gap-2">
-          <span className="text-[13px] font-semibold text-[var(--text-primary)]">
+      <div className="flex items-center justify-between px-4 py-3.5 border-b border-[var(--border)] pl-5 border-l-2 border-l-[var(--accent)] bg-[var(--accent-glow)]/25">
+        <div className="flex items-center gap-2.5">
+          <span className="relative flex h-2.5 w-2.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--accent)] opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[var(--accent)]"></span>
+          </span>
+          <span className="text-[15px] font-bold font-display text-[var(--text-primary)] tracking-tight">
             今日のAIトピック
           </span>
           {visibleTopics.length > 0 && (

@@ -118,7 +118,7 @@ export function Sidebar({ user, tags }: { user: User | null; tags: Tag[] }) {
         <div className="mt-1">
           {user?.is_anonymous ? (
           <Link
-            href="/login"
+            href={`/login?redirect=${encodeURIComponent(pathname || "/")}`}
             onClick={() => setSidebarOpen(false)}
             className="block px-3 py-1.5 text-[14px] text-[var(--accent)] hover:bg-[var(--accent-glow)] rounded-full"
           >
@@ -135,7 +135,7 @@ export function Sidebar({ user, tags }: { user: User | null; tags: Tag[] }) {
             </form>
           ) : (
             <Link
-              href="/login"
+              href={`/login?redirect=${encodeURIComponent(pathname || "/")}`}
               onClick={() => setSidebarOpen(false)}
               className="block px-3 py-1.5 text-[14px] text-[var(--accent)] hover:bg-[var(--accent-glow)] rounded-full"
             >

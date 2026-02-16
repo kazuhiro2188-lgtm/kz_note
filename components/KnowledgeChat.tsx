@@ -8,14 +8,18 @@ type Session = { id: string; title: string; created_at: string };
 export function KnowledgeChat({
   userId,
   sessions: initialSessions,
+  initialNoteId,
 }: {
   userId: string;
   sessions: Session[];
+  initialNoteId?: string;
 }) {
   const [sessions, setSessions] = useState(initialSessions);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(
-    initialSessions[0]?.id ?? null
+    // メモ指定時は新規チャットとして開始
+    initialNoteId ? null : initialSessions[0]?.id ?? null
   );
+  const [focusedNoteId, setFocusedNoteId] = useState<string | undefined>(initialNoteId);
   const [messages, setMessages] = useState<{ role: string; content: string }[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -36,6 +40,7 @@ export function KnowledgeChat({
     setSessions((s) => [{ id, title: "新規チャット", created_at: new Date().toISOString() }, ...s]);
     setCurrentSessionId(id);
     setMessages([]);
+    setFocusedNoteId(undefined);
   };
 
   const handleSend = async () => {
@@ -59,16 +64,18 @@ export function KnowledgeChat({
       const res = await fetch("/api/ai/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: userMessage, sessionId }),
+        body: JSON.stringify({
+          message: userMessage,
+          sessionId,
+          ...(focusedNoteId && { noteId: focusedNoteId }),
+        }),
       });
-      const data = await res.json();
-      if (data.message) {
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.message) {
         setMessages((m) => [...m, { role: "assistant", content: data.message }]);
       } else {
-        setMessages((m) => [
-          ...m,
-          { role: "assistant", content: "エラーが発生しました。" },
-        ]);
+        const errMsg = data.error || `サーバーエラー (${res.status})`;
+        setMessages((m) => [...m, { role: "assistant", content: `エラー: ${errMsg}` }]);
       }
     } catch {
       setMessages((m) => [
@@ -109,10 +116,24 @@ export function KnowledgeChat({
 
       <div className="min-w-0 flex-1 rounded-xl border border-zinc-800 bg-zinc-900/50">
         <div className="flex h-[500px] flex-col">
+          {focusedNoteId && (
+            <div className="flex items-center justify-between gap-2 px-4 py-2 border-b border-zinc-800 bg-zinc-800/30">
+              <span className="text-xs text-amber-400">このメモにフォーカス中</span>
+              <button
+                type="button"
+                onClick={() => setFocusedNoteId(undefined)}
+                className="text-xs text-zinc-500 hover:text-zinc-300 transition"
+              >
+                解除
+              </button>
+            </div>
+          )}
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
             {messages.length === 0 && (
               <div className="flex h-full items-center justify-center text-zinc-500">
-                メッセージを送信して、メモの内容について質問してみましょう
+                {focusedNoteId
+                  ? "このメモについて質問してみましょう"
+                  : "メッセージを送信して、メモの内容について質問してみましょう"}
               </div>
             )}
             {messages.map((m, i) => (
@@ -151,7 +172,7 @@ export function KnowledgeChat({
               <input
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="メモの内容について質問..."
+                placeholder={focusedNoteId ? "このメモについて質問..." : "メモの内容について質問..."}
                 className="flex-1 rounded-lg border border-zinc-700 bg-zinc-800 px-4 py-2.5 text-zinc-100 placeholder-zinc-500 focus:border-amber-500 focus:outline-none"
                 disabled={loading}
               />

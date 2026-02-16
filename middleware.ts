@@ -25,9 +25,10 @@ export async function middleware(request: NextRequest) {
       },
     });
 
+    // セッション検証（Supabase が自動でリフレッシュ・クッキー更新）
     await supabase.auth.getUser();
   } catch {
-    // ミドルウェアでエラーが発生してもアプリは表示する
+    // ミドルウェアでエラーが発生してもアプリは表示する（匿名認証は layout で処理）
   }
 
   return response;

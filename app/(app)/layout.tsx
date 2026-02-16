@@ -13,18 +13,10 @@ export default async function AppLayout({
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { data: allTags } = user
-    ? await supabase
-        .from("tags")
-        .select("id, name, color")
-        .eq("user_id", user.id)
-        .order("name")
-    : { data: [] };
-
   return (
     <AnonymousAuth>
       <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)]">
-        <AppShell user={user} tags={allTags ?? []}>
+        <AppShell user={user}>
           <div className="pb-16 lg:pb-0">{children}</div>
           <BottomNav />
         </AppShell>

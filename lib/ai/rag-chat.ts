@@ -33,6 +33,7 @@ ${context || "（関連メモなし）"}`;
     messages,
   });
 
-  const text = response.content[0].type === "text" ? response.content[0].text : "";
-  return text;
+  const block = response.content[0];
+  const text = block?.type === "text" ? block.text : "";
+  return text || "回答を生成できませんでした。";
 }

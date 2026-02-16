@@ -36,7 +36,7 @@ export function SemanticSearchWidget({ compact }: { compact?: boolean }) {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-            placeholder="メモを検索..."
+            placeholder="メモを検索... (タグ検索)"
             className="flex-1 bg-[var(--bg-secondary)] rounded-lg px-3 py-2 text-[13px] text-[var(--text-primary)] placeholder-[var(--text-muted)] border border-[var(--border)] focus:border-[var(--accent)] focus:outline-none transition"
             disabled={loading}
           />

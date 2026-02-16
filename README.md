@@ -48,7 +48,7 @@ OPENAI_API_KEY=your-openai-api-key
 1. [Supabase Dashboard](https://supabase.com/dashboard) でプロジェクトを開く
 2. **Authentication** → **Providers** → **Anonymous** を有効化
 
-> メール・Google OAuth を使う場合は、**Providers** からそれぞれ有効化してください。
+> メール認証を使う場合は、**Providers** から **Email** を有効化してください。
 
 ### 4. 開発サーバー起動
 
@@ -61,7 +61,7 @@ npm run dev
 ## 実装済み機能
 
 ### Phase 1 MVP
-- [x] 認証（メール・パスワード、Google OAuth）
+- [x] 認証（メール・パスワード）
 - [x] メモ CRUD（投稿・編集・削除・一覧）
 - [x] タイムライン表示（時系列）
 - [x] AI 自動タイトル・要約生成（Claude API）

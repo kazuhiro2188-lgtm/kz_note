@@ -120,13 +120,17 @@ export default async function HomePage({
           <NoteComposer userId={user.id} tags={allTags ?? []} />
         </div>
 
-        {/* タブ + タグフィルター */}
-        <div className="flex items-center gap-3 mb-3 flex-wrap">
+        {/* タブ */}
+        <div className="mb-2">
           <TimelineTabs currentTab={tab} inline />
-          <div className="flex-1 min-w-0 overflow-x-auto">
+        </div>
+
+        {/* タグフィルター - すべてタブのときのみ表示 */}
+        {tab === "all" && (
+          <div className="mb-3 overflow-x-auto">
             <TagFilter tags={allTags ?? []} currentTag={filterTag ?? null} />
           </div>
-        </div>
+        )}
 
         {/* タイムライン */}
         <div className="flex-1">

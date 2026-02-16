@@ -36,7 +36,7 @@ export function NoteComposer({ userId, tags }: { userId: string; tags: Tag[] }) 
       <textarea
         value={content}
         onChange={(e) => setContent(e.target.value)}
-        placeholder="今日学んだことを書いてみよう... Markdown対応"
+        placeholder="今日学んだことは？"
         rows={2}
         className="w-full bg-[var(--bg-secondary)] border border-[var(--border)] rounded-xl px-4 py-3 text-[14px] text-[var(--text-primary)] placeholder-[var(--text-muted)] resize-none outline-none transition focus:border-[var(--accent)] leading-relaxed"
         disabled={loading}
@@ -47,7 +47,7 @@ export function NoteComposer({ userId, tags }: { userId: string; tags: Tag[] }) 
           value={tagInput}
           onChange={(e) => setTagInput(e.target.value)}
           placeholder="# タグを追加"
-          className="flex-1 bg-transparent border-none outline-none text-[var(--text-secondary)] text-[13px] py-1"
+          className="flex-1 bg-transparent border-none outline-none text-[var(--accent-3)] placeholder:text-[var(--accent-3)] text-[13px] py-1"
           disabled={loading}
         />
         <button
