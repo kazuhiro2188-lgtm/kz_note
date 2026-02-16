@@ -182,6 +182,12 @@ export function NoteCard({ note, userId }: { note: NoteWithTags; userId: string 
           </div>
         )}
 
+        {note.content && (
+          <div className="text-[13px] text-[var(--text-secondary)] whitespace-pre-wrap leading-relaxed mb-2.5">
+            {note.content}
+          </div>
+        )}
+
         {note.summary && (
           <div className="bg-[var(--bg-secondary)] border border-[var(--border-light)] border-l-2 border-l-[var(--accent)] rounded-r-lg py-2.5 px-3.5 mb-2.5">
             <div className="text-[10px] font-bold tracking-wider uppercase text-[var(--accent)] font-display mb-1 flex items-center gap-1">
