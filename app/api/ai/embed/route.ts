@@ -35,22 +35,26 @@ export async function POST(request: Request) {
     );
   }
 
-  // 既存の埋め込みを削除
-  await supabase.from("note_embeddings").delete().eq("note_id", noteId);
+  try {
+    await supabase.from("note_embeddings").delete().eq("note_id", noteId);
 
-  const text = `${note.title}\n\n${note.content}`;
-  const chunks = chunkText(text);
+    const text = `${note.title}\n\n${note.content}`;
+    const chunks = chunkText(text);
 
-  for (const chunk of chunks) {
-    const embedding = await generateEmbedding(chunk);
-    if (embedding) {
-      await supabase.from("note_embeddings").insert({
-        note_id: noteId,
-        content: chunk,
-        embedding,
-      });
+    for (const chunk of chunks) {
+      const embedding = await generateEmbedding(chunk);
+      if (embedding) {
+        await supabase.from("note_embeddings").insert({
+          note_id: noteId,
+          content: chunk,
+          embedding,
+        });
+      }
     }
-  }
 
-  return NextResponse.json({ success: true, chunks: chunks.length });
+    return NextResponse.json({ success: true, chunks: chunks.length });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "埋め込みの生成に失敗しました";
+    return NextResponse.json({ error: msg }, { status: 500 });
+  }
 }

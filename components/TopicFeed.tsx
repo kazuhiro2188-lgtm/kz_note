@@ -21,11 +21,13 @@ export function TopicFeed({ userId }: { userId: string }) {
     try {
       setError(null);
       const res = await fetch("/api/topics/daily");
-      if (!res.ok) throw new Error("Failed to fetch topics");
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || "トピックの取得に失敗しました");
+      }
       setTopics(data.topics ?? []);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "エラーが発生しました");
+      setError(e instanceof Error ? e.message : "トピックの取得に失敗しました");
     } finally {
       setLoading(false);
     }
@@ -144,8 +146,14 @@ export function TopicFeed({ userId }: { userId: string }) {
 
       {/* エラー表示 */}
       {error && (
-        <div className="px-4 py-3 text-[13px] text-amber-400 bg-amber-500/10 rounded-lg mx-4 mb-3">
-          {error}
+        <div className="flex items-center justify-between gap-3 px-4 py-3 text-[13px] text-[var(--accent-warn)] bg-[var(--accent-warn)]/10 border border-[var(--accent-warn)]/20 rounded-lg mx-4 mb-3">
+          <span>{error}</span>
+          <button
+            onClick={() => fetchTopics()}
+            className="shrink-0 px-3 py-1.5 rounded-lg bg-[var(--accent-warn)]/20 text-[var(--accent-warn)] font-medium hover:bg-[var(--accent-warn)]/30 transition text-[12px]"
+          >
+            再試行
+          </button>
         </div>
       )}
 

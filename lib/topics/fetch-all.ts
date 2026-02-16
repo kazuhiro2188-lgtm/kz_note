@@ -34,7 +34,8 @@ async function upsertTopicWithEmbedding(
       const translated = await translateToJapanese(topic.title, topic.description);
       title = translated.title;
       description = translated.description;
-    } catch {
+    } catch (err) {
+      console.error("[fetch-topics] Translation failed for:", topic.title?.slice(0, 50), err);
       // 翻訳失敗時は原文のまま
     }
   }

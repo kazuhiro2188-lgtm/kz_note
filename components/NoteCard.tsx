@@ -53,18 +53,28 @@ export function NoteCard({ note, userId }: { note: NoteWithTags; userId: string 
   const [isDeleting, setIsDeleting] = useState(false);
   const [flowchart, setFlowchart] = useState<string | null>(note.flowchart);
   const [flowchartLoading, setFlowchartLoading] = useState(false);
+  const [flowchartError, setFlowchartError] = useState<string | null>(null);
   const [mindmap, setMindmap] = useState<string | null>(note.mindmap);
   const [mindmapLoading, setMindmapLoading] = useState(false);
+  const [mindmapError, setMindmapError] = useState<string | null>(null);
   const [embeddingLoading, setEmbeddingLoading] = useState(false);
+  const [embeddingError, setEmbeddingError] = useState<string | null>(null);
 
   const handleGenerateEmbedding = async () => {
     setEmbeddingLoading(true);
+    setEmbeddingError(null);
     try {
-      await fetch("/api/ai/embed", {
+      const res = await fetch("/api/ai/embed", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ noteId: note.id }),
       });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "登録に失敗しました");
+      }
+    } catch (e) {
+      setEmbeddingError(e instanceof Error ? e.message : "登録に失敗しました");
     } finally {
       setEmbeddingLoading(false);
     }
@@ -72,6 +82,7 @@ export function NoteCard({ note, userId }: { note: NoteWithTags; userId: string 
 
   const handleGenerateFlowchart = async () => {
     setFlowchartLoading(true);
+    setFlowchartError(null);
     try {
       const res = await fetch("/api/ai/flowchart", {
         method: "POST",
@@ -79,7 +90,13 @@ export function NoteCard({ note, userId }: { note: NoteWithTags; userId: string 
         body: JSON.stringify({ noteId: note.id }),
       });
       const data = await res.json();
-      if (data.mermaid) setFlowchart(data.mermaid);
+      if (data.mermaid) {
+        setFlowchart(data.mermaid);
+      } else if (!res.ok) {
+        throw new Error(data.error || "図解の生成に失敗しました");
+      }
+    } catch (e) {
+      setFlowchartError(e instanceof Error ? e.message : "図解の生成に失敗しました");
     } finally {
       setFlowchartLoading(false);
     }
@@ -87,6 +104,7 @@ export function NoteCard({ note, userId }: { note: NoteWithTags; userId: string 
 
   const handleGenerateMindmap = async () => {
     setMindmapLoading(true);
+    setMindmapError(null);
     try {
       const res = await fetch("/api/ai/mindmap", {
         method: "POST",
@@ -94,7 +112,13 @@ export function NoteCard({ note, userId }: { note: NoteWithTags; userId: string 
         body: JSON.stringify({ noteId: note.id }),
       });
       const data = await res.json();
-      if (data.mermaid) setMindmap(data.mermaid);
+      if (data.mermaid) {
+        setMindmap(data.mermaid);
+      } else if (!res.ok) {
+        throw new Error(data.error || "マインドマップの生成に失敗しました");
+      }
+    } catch (e) {
+      setMindmapError(e instanceof Error ? e.message : "マインドマップの生成に失敗しました");
     } finally {
       setMindmapLoading(false);
     }
@@ -234,6 +258,12 @@ export function NoteCard({ note, userId }: { note: NoteWithTags; userId: string 
             削除
           </button>
         </div>
+        {(flowchartError || mindmapError || embeddingError) && (
+          <p className="mt-2 text-[11px] text-[var(--accent-warn)]">
+            {[flowchartError, mindmapError, embeddingError].filter(Boolean).join(" / ")}
+            <span className="text-[var(--text-muted)] ml-1">（再クリックで再試行）</span>
+          </p>
+        )}
       </div>
 
       {isEditing && (

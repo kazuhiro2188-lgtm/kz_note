@@ -8,11 +8,13 @@ export function SemanticSearchWidget({ compact }: { compact?: boolean }) {
   const [results, setResults] = useState<{ note_id: string; content: string; similarity: number }[]>([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSearch = async () => {
     if (!query.trim()) return;
     setLoading(true);
     setSearched(true);
+    setError(null);
     try {
       const res = await fetch("/api/ai/search", {
         method: "POST",
@@ -20,9 +22,13 @@ export function SemanticSearchWidget({ compact }: { compact?: boolean }) {
         body: JSON.stringify({ query: query.trim() }),
       });
       const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "検索に失敗しました");
+      }
       setResults(data.results ?? []);
-    } catch {
+    } catch (e) {
       setResults([]);
+      setError(e instanceof Error ? e.message : "検索に失敗しました");
     } finally {
       setLoading(false);
     }
@@ -48,7 +54,12 @@ export function SemanticSearchWidget({ compact }: { compact?: boolean }) {
             {loading ? "..." : "検索"}
           </button>
         </div>
-        {searched && results.length > 0 && (
+        {error && (
+          <p className="absolute top-full left-0 right-0 mt-1 px-3 py-2 text-[12px] text-[var(--accent-warn)] bg-[var(--accent-warn)]/10 rounded-lg z-50">
+            {error}
+          </p>
+        )}
+        {searched && !error && results.length > 0 && (
           <div className="absolute top-full left-0 right-0 mt-1 bg-[var(--bg-card)] border border-[var(--border)] rounded-xl shadow-2xl z-50 max-h-60 overflow-y-auto">
             {results.slice(0, 5).map((r, i) => (
               <Link
@@ -91,7 +102,10 @@ export function SemanticSearchWidget({ compact }: { compact?: boolean }) {
           検索
         </button>
       </div>
-      {searched && (
+      {error && (
+        <p className="mt-2 text-[12px] text-[var(--accent-warn)]">{error}</p>
+      )}
+      {searched && !error && (
         <div className="mt-2 space-y-1 max-h-36 overflow-y-auto">
           {results.length === 0 ? (
             <p className="text-[12px] text-[var(--text-muted)] py-2">該当なし</p>

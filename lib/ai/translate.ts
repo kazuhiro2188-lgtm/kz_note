@@ -3,12 +3,23 @@ import Anthropic from "@anthropic-ai/sdk";
 /**
  * 英語のタイトル・説明文を日本語に翻訳する
  */
+/** レスポンスから JSON を抽出（markdown コードブロックを除去） */
+function extractJson(text: string): string {
+  const trimmed = text.trim();
+  const match = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if (match) return match[1].trim();
+  return trimmed;
+}
+
 export async function translateToJapanese(
   title: string,
   description: string | null
 ): Promise<{ title: string; description: string | null }> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) return { title, description };
+  if (!apiKey) {
+    console.warn("[translate] ANTHROPIC_API_KEY not set, skipping translation");
+    return { title, description };
+  }
 
   const anthropic = new Anthropic({ apiKey });
 
@@ -32,11 +43,16 @@ ${textToTranslate.slice(0, 500)}
       messages: [{ role: "user", content: prompt }],
     });
 
-    const text =
-      response.content[0].type === "text"
-        ? response.content[0].text
-        : "";
-    const parsed = JSON.parse(text.trim()) as {
+    const block = response.content[0];
+    const rawText = block?.type === "text" ? block.text : "";
+    const jsonStr = extractJson(rawText);
+
+    if (!jsonStr) {
+      console.warn("[translate] Empty response from API");
+      return { title, description };
+    }
+
+    const parsed = JSON.parse(jsonStr) as {
       title?: string;
       description?: string | null;
     };
@@ -48,7 +64,8 @@ ${textToTranslate.slice(0, 500)}
           ? String(parsed.description).trim()
           : description,
     };
-  } catch {
+  } catch (err) {
+    console.error("[translate] Translation failed:", err);
     return { title, description };
   }
 }
